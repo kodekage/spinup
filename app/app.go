@@ -7,43 +7,46 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"time"
 )
 
-type Application struct {
-	Name      string
-	Directory string
-	Type      string
+type App interface {
+	CreateProject(cmd string, args ...string) bool
+	RemoveProject(path string) bool
 }
 
-func New() *Application {
-	app := Application{
-		Name:      viper.GetString("name"),
-		Directory: viper.GetString("output"),
-		Type:      viper.GetString("type"),
+type spinupApp struct {
+	name      string
+	directory string
+}
+
+func New() spinupApp {
+	app := spinupApp{
+		name:      viper.GetString("name"),
+		directory: viper.GetString("output"),
 	}
 
-	return &app
+	return app
 }
 
-func (app Application) CreateReactApp() {
-	start := time.Now()
+func (a spinupApp) CreateProject(cmd string, args ...string) bool {
+	execTime := util.ExecTime()
 	homeDir := util.HomeDir()
 	directory := homeDir
 
 	// use user specified directory
-	if len(app.Directory) != 0 {
-		directory = fmt.Sprintf("%s/%s", homeDir, app.Directory)
+	if len(a.directory) != 0 {
+		directory = fmt.Sprintf("%s/%s", homeDir, a.directory)
 	}
 
 	isValid := util.ValidateCommand("npx")
 
 	if isValid {
-		path := util.CreateDirectory(app.Name, directory)
+		path := util.CreateDirectory(a.name, directory)
 
-		fmt.Println("=> Bootstrapping React Application...💨")
+		fmt.Println("=> Bootstrapping Application...💨")
 
-		cmd := exec.Command("npx", "create-react-app", ".", "--template typescript --eslint --src-dir --import-alias '\"@/*\"'")
+		cmd := exec.Command(cmd, args...)
+
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = path
@@ -54,7 +57,8 @@ func (app Application) CreateReactApp() {
 			log.Fatalf("there was an error bootstrapping app %s", err)
 		}
 		fmt.Println("=> Application Created ✅✅ ")
-		elapsed := time.Now().Sub(start)
-		fmt.Printf("Time Ellapsed %s", elapsed)
+		execTime()
 	}
+
+	return true
 }
