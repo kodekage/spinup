@@ -28,15 +28,23 @@ func ValidateCommand(cmd string) bool {
 }
 
 func CreateDirectory(name string, dir string) string {
+	homeDir := HomeDir()
+	directory := homeDir
+
+	// use user specified directory
+	if len(dir) != 0 {
+		directory = fmt.Sprintf("%s/%s", homeDir, dir)
+	}
+
 	cmd := exec.Command("mkdir", name)
-	cmd.Dir = dir
+	cmd.Dir = directory
 	err := cmd.Run()
 
 	if err != nil {
 		log.Fatal("there was an error creating directory: ", err)
 	}
 
-	return fmt.Sprintf("%s/%s", dir, name)
+	return fmt.Sprintf("%s/%s", directory, name)
 }
 
 func ExecTime() func() {

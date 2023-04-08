@@ -2,46 +2,41 @@ package app
 
 import (
 	"fmt"
-	"github.com/kodekage/spinup/util"
-	"github.com/spf13/viper"
 	"log"
 	"os"
 	"os/exec"
+
+	"github.com/kodekage/spinup/util"
+	"github.com/spf13/viper"
 )
 
 type App interface {
-	CreateProject(cmd string, args ...string) bool
+	CreateProject(cmd string, args ...string) interface{}
 	RemoveProject(path string) bool
 }
 
-type spinupApp struct {
-	name      string
-	directory string
+type SpinupApp struct {
+	Name      string
+	Directory string
 }
 
-func New() spinupApp {
-	app := spinupApp{
-		name:      viper.GetString("name"),
-		directory: viper.GetString("output"),
+func New() SpinupApp {
+	app := SpinupApp{
+		Name:      viper.GetString("name"),
+		Directory: viper.GetString("output"),
 	}
 
 	return app
 }
 
-func (a spinupApp) CreateProject(cmd string, args ...string) bool {
+func (a SpinupApp) CreateProject(cmd string, args ...string) {
 	execTime := util.ExecTime()
-	homeDir := util.HomeDir()
-	directory := homeDir
+	defer execTime()
 
-	// use user specified directory
-	if len(a.directory) != 0 {
-		directory = fmt.Sprintf("%s/%s", homeDir, a.directory)
-	}
-
-	isValid := util.ValidateCommand("npx")
+	isValid := util.ValidateCommand(cmd)
 
 	if isValid {
-		path := util.CreateDirectory(a.name, directory)
+		path := util.CreateDirectory(a.Name, a.Directory)
 
 		fmt.Println("=> Bootstrapping Application...💨")
 
@@ -56,9 +51,7 @@ func (a spinupApp) CreateProject(cmd string, args ...string) bool {
 		if err != nil {
 			log.Fatalf("there was an error bootstrapping app %s", err)
 		}
-		fmt.Println("=> Application Created ✅✅ ")
-		execTime()
-	}
 
-	return true
+		fmt.Println("=> Application Created ✅✅ ")
+	}
 }
